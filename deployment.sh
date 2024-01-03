@@ -128,7 +128,7 @@ function start_k0s {
   fi
 }
 
-function install_boldbi {
+function install_boldreports {
   if [ -n "$aws_access_key" ] && [ -n "$aws_secret_access_key" ] && [ -n "$s3_bucket" ]; then
     install_s3fs
     create_directory $directory
@@ -150,13 +150,13 @@ function install_boldbi {
   destination="/manifest"
   download_and_unzip $repo_url $destination
 
-  say 4 "Deploying Bold BI application..."
+  say 4 "Deploying Bold Reports application..."
   k0s kubectl apply -k $destination/private-cloud
 
   show_bold_bi_graphic
 
-  say 2 "Bold BI application deployed successfully!"
-  say 4 "You can access "boldbi" on your machine's IP with port number 30080, and Redis on port 32379."
+  say 2 "Bold Reports application deployed successfully!"
+  say 4 "You can access "boldreports" on your machine's IP with port number 30080, and Redis on port 32379."
 }
 
-install_boldbi
+install_boldreports
