@@ -59,12 +59,11 @@ function install_packages {
 
 # Function to download and unzip GitHub repository
 function download_and_unzip_manifest {
-  repo_url=$1
-  destination=$2
-  [ -d "$destination" ] && rm -r "$destination" ; mkdir "$destination" || mkdir "$destination"
+  [ -d "$destination" ] && rm -r "$destination"
+  mkdir -p "$destination"
   say 4 "Downloading and extracting GitHub repository..."
-  curl -sSL $repo_url -o repo.zip
-  unzip -qq repo.zip -d $destination
+  curl -sSL "$repo_url" -o repo.zip
+  unzip -qq repo.zip -d "$destination"
   rm repo.zip
 }
 
