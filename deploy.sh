@@ -58,7 +58,7 @@ function install_packages {
 }
 
 # Function to download and unzip GitHub repository
-function download_and_unzip {
+function download_and_unzip_manifest {
   repo_url=$1
   destination=$2
   [ -d "$destination" ] && rm -r "$destination" ; mkdir "$destination" || mkdir "$destination"
