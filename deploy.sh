@@ -181,6 +181,21 @@ function start_k0s {
   }
 }
 
+function domain_mapping  {
+# File path to your YAML configuration file
+config_file="/manifest/private-cloud/boldreports/ingress.yaml"
+
+# Domain to replace with
+new_domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
+
+# Uncomment and replace domain in the specified lines
+sed -i -e "s/^ *#tls:/  tls:/" "$config_file"
+sed -i -e "s/^ *#- hosts:/  - hosts:/" "$config_file"
+sed -i -e "s/^ *#- example.com/    - $new_domain/" "$config_file"
+sed -i -e "s/^ *#secretName: boldreports-tls/    secretName: boldreports-tls/" "$config_file"
+sed -i -e "s/^ *- #host: example.com/  - host: $new_domain/" "$config_file"
+}
+
 # Function to install Bold Reports
 function install_bold_reports {
   install_packages nginx zip
@@ -194,6 +209,8 @@ function install_bold_reports {
   else
       say 3 "Skipping app_base_url mapping as it is not provided"
   fi
+  domain_mapping
+  nginx_configuration
   
   k0s kubectl get nodes &> /dev/null || handle_error "k0s cluster is not running."
   
