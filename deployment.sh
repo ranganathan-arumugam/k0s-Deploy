@@ -194,6 +194,8 @@ sed -i -e "s/^ *#- hosts:/  - hosts:/" "$config_file"
 sed -i -e "s/^ *#- example.com/    - $new_domain/" "$config_file"
 sed -i -e "s/^ *#secretName: boldreports-tls/    secretName: boldreports-tls/" "$config_file"
 sed -i -e "s/^ *- #host: example.com/  - host: $new_domain/" "$config_file"
+
+say 4 "Domain mapped in the ingress file."
 }
 
 # Function to install Bold Reports
@@ -206,11 +208,11 @@ function install_bold_reports {
   say 4 "Checking app_base_url provided"
   if [ -n "$app_base_url" ]; then
     app_base_url_mapping
+    domain_mapping
   else
       say 3 "Skipping app_base_url mapping as it is not provided"
   fi
-  domain_mapping
-  
+
   k0s kubectl get nodes &> /dev/null || handle_error "k0s cluster is not running."
   
   if [ -n "$storage_account_name" ] && [ -n "$storage_account_key" ] && [ -n "$fileshare_name" ]; then
@@ -226,11 +228,10 @@ function install_bold_reports {
     say 3 "Skipping fileshare mounting details as they are not provided."
   fi
 
-  nginx_configuration
-
   say 4 "Deploying Bold Reports application..."
   k0s kubectl apply -k "$destination/private-cloud"
 
+  nginx_configuration
   show_bold_reports_graphic
 
   say 2 "Bold Reports application deployed successfully!"
