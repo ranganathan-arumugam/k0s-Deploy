@@ -191,10 +191,10 @@ function domain_mapping {
   new_domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
 
   # Uncomment and replace domain in the specified lines
-  sed -i -e 's/^ *#tls:/  tls:/' \
-         -e 's/^ *#- hosts:/  - hosts:/' \
-         -e "s/^ *#- example.com/    - $new_domain/" \
-         -e 's/^ *#secretName: boldreports-tls/    secretName: boldreports-tls/' \
+  sed -i -e 's/^ *# tls:/  tls:/' \
+         -e 's/^ *# - hosts:/  - hosts:/' \
+         -e "s/^ *# - example.com/    - $new_domain/" \
+         -e 's/^ *# secretName: boldreports-tls/    secretName: boldreports-tls/' \
          -e "s/^ *- #host: example.com/  - host: $new_domain/" \
          "$config_file"
 
