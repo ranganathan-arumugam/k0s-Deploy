@@ -210,7 +210,6 @@ function install_bold_reports {
       say 3 "Skipping app_base_url mapping as it is not provided"
   fi
   domain_mapping
-  nginx_configuration
   
   k0s kubectl get nodes &> /dev/null || handle_error "k0s cluster is not running."
   
@@ -226,6 +225,8 @@ function install_bold_reports {
   else
     say 3 "Skipping fileshare mounting details as they are not provided."
   fi
+
+  nginx_configuration
 
   say 4 "Deploying Bold Reports application..."
   k0s kubectl apply -k "$destination/private-cloud"
