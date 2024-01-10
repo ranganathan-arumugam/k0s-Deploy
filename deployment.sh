@@ -95,6 +95,8 @@ function nginx_configuration {
   cluster_ip=$(k0s kubectl get service ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')
   domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
   nginx_conf="/etc/nginx/sites-available/default"
+  cp /manifest/private-cloud/boldreports/certificate.pem /etc/nginx/sites-available
+  cp /manifest/private-cloud/boldreports/private-key.pem /etc/nginx/sites-available
   
   # Remove existing nginx configuration file
   [ -e "$nginx_conf" ] && rm "$nginx_conf"
@@ -110,8 +112,8 @@ function nginx_configuration {
     server {
       server_name $domain;
       listen 443 ssl;
-      ssl_certificate /etc/nginx/sites-available/domain.pem;
-      ssl_certificate_key /etc/nginx/sites-available/domain.key;
+      ssl_certificate /etc/nginx/sites-available/certificate.pem;
+      ssl_certificate_key /etc/nginx/sites-available/private-key.pem;
 
       location / {
         proxy_pass http://$cluster_ip;
