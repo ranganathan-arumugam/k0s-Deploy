@@ -19,6 +19,9 @@ for arg in "$@"; do
     --fileshare-name=*)
       fileshare_name="${arg#*=}"
       ;;
+    --container-name=*)
+      container_name="${arg#*=}"
+      ;;
     --app_base_url=*)
       app_base_url="${arg#*=}"
       ;;
@@ -79,6 +82,23 @@ function update_fileshare_name {
   kustomfile="$destination/private-cloud/kustomization.yaml"
   #sed -i -e "s/^ *#- boldreports/configuration/pvclaim_azure_smb.yaml/  - boldreports/configuration/pvclaim_azure_smb.yaml/" "$kustomfile"
   sed -i -e "s/^ *#- boldreports\/configuration\/pvclaim_azure_smb\.yaml/  - boldreports\/configuration\/pvclaim_azure_smb.yaml/" "$kustomfile"
+
+  #sed -i -e "s/^ *- boldreports/configuration/pvclaim_onpremise.yaml/   #- boldreports/configuration/pvclaim_onpremise.yaml/" "$kustomfile"
+  sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"  
+}
+
+# Function to update Azure Blob container name in configuration
+function update_blobcontainer_name {
+  pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_smb.yaml"
+  if [ -f "$pvconfig_file" ]; then
+    sed -i -e "s/^ *shareName: <container_name>/   shareName: $container_name/" "$pvconfig_file"
+  else
+    handle_error "Pvclaim file is not available"
+  fi
+
+  kustomfile="$destination/private-cloud/kustomization.yaml"
+  #sed -i -e "s/^ *#- boldreports/configuration/pvclaim_azure_smb.yaml/  - boldreports/configuration/pvclaim_azure_smb.yaml/" "$kustomfile"
+  sed -i -e "s/^ *#- boldreports\/configuration\/pvclaim_azure_blob\.yaml/  - boldreports\/configuration\/pvclaim_azure_blob.yaml/" "$kustomfile"
 
   #sed -i -e "s/^ *- boldreports/configuration/pvclaim_onpremise.yaml/   #- boldreports/configuration/pvclaim_onpremise.yaml/" "$kustomfile"
   sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"  
@@ -183,23 +203,23 @@ function start_k0s {
   }
 }
 
-function domain_mapping {
-  # File path to your YAML configuration file
-  config_file="/manifest/private-cloud/boldreports/ingress.yaml"
+# function domain_mapping {
+#   # File path to your YAML configuration file
+#   config_file="/manifest/private-cloud/boldreports/ingress.yaml"
 
-  # Domain to replace with
-  new_domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
+#   # Domain to replace with
+#   new_domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
 
-  # Uncomment and replace domain in the specified lines
-  sed -i -e 's/^ *# tls:/  tls:/' \
-         -e 's/^ *# - hosts:/  - hosts:/' \
-         -e "s/^ *# - example.com/    - $new_domain/" \
-         -e 's/^ *# secretName: boldreports-tls/    secretName: boldreports-tls/' \
-         -e "s/^ *- #host: example.com/  - host: $new_domain/" \
-         "$config_file"
+#   # Uncomment and replace domain in the specified lines
+#   sed -i -e 's/^ *# tls:/  tls:/' \
+#          -e 's/^ *# - hosts:/  - hosts:/' \
+#          -e "s/^ *# - example.com/    - $new_domain/" \
+#          -e 's/^ *# secretName: boldreports-tls/    secretName: boldreports-tls/' \
+#          -e "s/^ *- #host: example.com/  - host: $new_domain/" \
+#          "$config_file"
 
-  say 4 "Domain mapped in the ingress file."
-}
+#   say 4 "Domain mapped in the ingress file."
+# }
 
 # Function to install Bold Reports
 function install_bold_reports {
@@ -228,6 +248,19 @@ function install_bold_reports {
     fi
   else
     say 3 "Skipping fileshare mounting details as they are not provided."
+  fi
+
+  if [ -n "$storage_account_name" ] && [ -n "$storage_account_key" ] && [ -n "$container_name" ]; then
+    update_blobcontainer_name
+    # Check if the secret already exists
+    if k0s kubectl get secret bold-azure-secret > /dev/null 2>&1; then
+      say 4 "Secret bold-azure-secret already exists. Skipping creation."
+    else
+      say 4 "Creating azure secret"
+      k0s kubectl create secret generic bold-azure-secret --from-literal azurestorageaccountname="$storage_account_name" --from-literal azurestorageaccountkey="$storage_account_key" --type=Opaque
+    fi
+  else
+    say 3 "Skipping blobcontainer name mounting details as they are not provided."
   fi
 
   say 4 "Deploying Bold Reports application..."
