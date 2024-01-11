@@ -91,7 +91,7 @@ function update_fileshare_name {
 function update_blobcontainer_name {
   pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_smb.yaml"
   if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s/^ *shareName: <container_name>/   shareName: $container_name/" "$pvconfig_file"
+    sed -i -e "s/^ *containerName: <container_name>/   containerName: $container_name/" "$pvconfig_file"
   else
     handle_error "Pvclaim file is not available"
   fi
