@@ -211,7 +211,6 @@ function install_bold_reports {
   say 4 "Checking app_base_url provided"
   if [ -n "$app_base_url" ]; then
     app_base_url_mapping
-    domain_mapping
   else
       say 3 "Skipping app_base_url mapping as it is not provided"
   fi
