@@ -115,6 +115,7 @@ function nginx_configuration {
   cluster_ip=$(k0s kubectl get service ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')
   domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
   nginx_conf="/etc/nginx/sites-available/default"
+  request_uri="$request_uri"
   cp /manifest/private-cloud/boldreports/certificate.pem /etc/nginx/sites-available
   cp /manifest/private-cloud/boldreports/private-key.pem /etc/nginx/sites-available
   
