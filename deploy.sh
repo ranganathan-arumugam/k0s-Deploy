@@ -95,9 +95,8 @@ function update_smbfileshare_name {
 function update_nfsfileshare_name {
   pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_nfs.yaml"
   if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s/^ *path: <path>/   path: $nfsfileshare_path/" "$pvconfig_file"
-
-    sed -i -e "s/^ *server: <server>/   server: $nfs_server_name/" "$pvconfig_file"
+    sed -i -e "s/^ *path: <path>/  path: $nfsfileshare_path/" "$pvconfig_file"
+    sed -i -e "s/^ *server: <server>/  server: $nfs_server_name/" "$pvconfig_file"
   else
     handle_error "Pvclaim file is not available"
   fi
@@ -272,13 +271,6 @@ function install_bold_reports {
 
   if [ -n "$nfsfileshare_path" ] && [ -n "$nfs_server_name" ]; then
     update_nfsfileshare_name
-    # Check if the secret already exists
-    # if k0s kubectl get secret bold-azure-secret > /dev/null 2>&1; then
-    #   say 4 "Secret bold-azure-secret already exists. Skipping creation."
-    # else
-    #   say 4 "Creating azure secret"
-    #   k0s kubectl create secret generic bold-azure-secret --from-literal azurestorageaccountname="$storage_account_name" --from-literal azurestorageaccountkey="$storage_account_key" --type=Opaque
-    # fi
   else
     say 3 "Skipping NFS fileshare mounting details as they are not provided."
   fi
