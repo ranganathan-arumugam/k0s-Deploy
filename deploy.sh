@@ -242,7 +242,7 @@ function start_k0s {
 
 # Function to install Bold Reports
 function install_bold_reports {
-  install_packages nginx zip
+  install_packages nginx zip nfs-common
   download_and_unzip_manifest
   install_k0s
   start_k0s
