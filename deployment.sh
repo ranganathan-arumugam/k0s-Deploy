@@ -95,12 +95,9 @@ function update_smbfileshare_name {
 function update_nfsfileshare_name {
   pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_nfs.yaml"
   if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s/^ *path: <path>/   path: $nfsfileshare_path/" \
-           -e "s/^ *server: <server>/   server: $nfs_server_name/" \
-           "$pvconfig_file"
-    # sed -i -e "s/^ *path: <path>/   path: $nfsfileshare_path/" "$pvconfig_file"
+    sed -i -e "s/^ *path: <path>/   path: $nfsfileshare_path/" "$pvconfig_file"
 
-    # sed -i -e "s/^ *server: <server>/   server: $nfs_server_name/" "$pvconfig_file"
+    sed -i -e "s/^ *server: <server>/   server: $nfs_server_name/" "$pvconfig_file"
   else
     handle_error "Pvclaim file is not available"
   fi
