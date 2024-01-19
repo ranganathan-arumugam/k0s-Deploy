@@ -270,7 +270,7 @@ function install_bold_reports {
   fi
 
   if [ -n "$nfsfileshare_path" ] && [ -n "$nfs_server_name" ]; then
-    update_smbfileshare_name
+    update_nfsfileshare_name
     # Check if the secret already exists
     # if k0s kubectl get secret bold-azure-secret > /dev/null 2>&1; then
     #   say 4 "Secret bold-azure-secret already exists. Skipping creation."
