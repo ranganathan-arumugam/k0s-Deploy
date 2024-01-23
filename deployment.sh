@@ -134,8 +134,8 @@ function nginx_configuration {
   domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
   nginx_conf="/etc/nginx/sites-available/default"
   request_uri="$request_uri"
-  cp /manifest/private-cloud/boldreports/certificate.pem /etc/nginx/sites-available
-  cp /manifest/private-cloud/boldreports/private-key.pem /etc/nginx/sites-available
+  # cp /manifest/private-cloud/boldreports/certificate.pem /etc/nginx/sites-available
+  # cp /manifest/private-cloud/boldreports/private-key.pem /etc/nginx/sites-available
   
   # Remove existing nginx configuration file
   [ -e "$nginx_conf" ] && rm "$nginx_conf"
@@ -182,7 +182,7 @@ function nginx_configuration {
         proxy_set_header Host \$http_host;
         proxy_cache_bypass \$http_upgrade;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
+        proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
       }
     }"
@@ -290,9 +290,9 @@ function install_bold_reports {
 
   say 4 "Deploying Bold Reports application..."
   k0s kubectl apply -k "$destination/private-cloud"
-  if [ -n "$app_base_url" ]; then
-    k0s kubectl create secret tls boldreports-tls -n bold-services --key "/manifest/private-cloud/boldreports/private-key.pem" --cert "/manifest/private-cloud/boldreports/certificate.pem"
-  fi
+  # if [ -n "$app_base_url" ]; then
+  #   k0s kubectl create secret tls boldreports-tls -n bold-services --key "/manifest/private-cloud/boldreports/private-key.pem" --cert "/manifest/private-cloud/boldreports/certificate.pem"
+  # fi
 
   nginx_configuration
   show_bold_reports_graphic
