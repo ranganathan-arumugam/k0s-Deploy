@@ -294,8 +294,8 @@ function install_bold_reports {
   #   k0s kubectl create secret tls boldreports-tls -n bold-services --key "/manifest/private-cloud/boldreports/private-key.pem" --cert "/manifest/private-cloud/boldreports/certificate.pem"
   # fi
 
-  nginx_configuration
   show_bold_reports_graphic
+  nginx_configuration
 
   say 2 "Bold Reports application deployed successfully!"
   say 4 "You can access 'boldreports' on $app_base_url after mapping your machine IP with "$(echo "$app_base_url" | sed 's~^https\?://~~')""
