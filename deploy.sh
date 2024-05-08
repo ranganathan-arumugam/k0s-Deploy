@@ -151,8 +151,8 @@ if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
     server {
       server_name $domain;
       listen 443 ssl;
-      ssl_certificate /etc/ssl/domain.pem;
-      ssl_certificate_key /etc/ssl/domain.key;
+      ssl_certificate /etc/ssl/certificate.pem;
+      ssl_certificate_key /etc/ssl/private-key.pem;
 
       proxy_read_timeout 300;
       proxy_connect_timeout 300;
