@@ -140,23 +140,19 @@ function nginx_configuration {
   # Remove existing nginx configuration file
   [ -e "$nginx_conf" ] && rm "$nginx_conf"
   
-if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  if [ -n "$app_base_url" ]; then
     nginx_conf_content="
     server {
       listen 80;
       server_name $domain;
-      return 301 https://$domain\$request_uri;
+      return 301 https://$domain$request_uri;
     }
 
     server {
       server_name $domain;
       listen 443 ssl;
-      ssl_certificate /etc/ssl/domain.pem;
-      ssl_certificate_key /etc/ssl/domain.key;
-
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
+      ssl_certificate /etc/nginx/sites-available/certificate.pem;
+      ssl_certificate_key /etc/nginx/sites-available/private-key.pem;
 
       location / {
         proxy_pass http://$cluster_ip;
@@ -176,10 +172,6 @@ if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
     server {
       listen 80 default_server;
       listen [::]:80 default_server;
-
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
 
       location / {
         proxy_pass http://$cluster_ip;
@@ -302,8 +294,8 @@ function install_bold_reports {
   #   k0s kubectl create secret tls boldreports-tls -n bold-services --key "/manifest/private-cloud/boldreports/private-key.pem" --cert "/manifest/private-cloud/boldreports/certificate.pem"
   # fi
 
-  show_bold_reports_graphic
   nginx_configuration
+  show_bold_reports_graphic
 
   say 2 "Bold Reports application deployed successfully!"
   say 4 "You can access 'boldreports' on $app_base_url after mapping your machine IP with "$(echo "$app_base_url" | sed 's~^https\?://~~')""
