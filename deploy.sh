@@ -217,7 +217,7 @@ function start_k0s {
 }
 
 # Function to install Bold BI
-function install_bold_bi {
+function install_bold_reports {
   install_packages nginx zip nfs-common
   download_and_unzip_manifest
   install_k0s
