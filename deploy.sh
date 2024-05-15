@@ -200,7 +200,7 @@ function show_bold_reports_graphic {
 # Function to install k0s
 function install_k0s {
   say 4 "Installing k0s..."
-  command_exists k0s && say 2 "k0s is already installed." || { curl -sSLf https://get.k0s.sh | sudo sh; }
+  command_exists k0s && say 2 "k0s is already installed." || { curl -sSLf https://get.k0s.sh | sudo K0S_VERSION=v1.23.6+k0s.0 sh; }
 }
 
 # Function to start k0s cluster
