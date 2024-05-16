@@ -199,7 +199,6 @@ function show_bold_reports_graphic {
 
 # Function to install k0s
 function install_k0s {
-  say() { echo "$1" >&2; }
   say "Installing k0s..."
   if command -v k0s &> /dev/null; then
     say "k0s is already installed."
