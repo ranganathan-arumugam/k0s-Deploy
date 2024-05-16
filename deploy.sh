@@ -135,8 +135,8 @@ function nginx_configuration {
     server {
       server_name $domain;
       listen 443 ssl;
-      ssl_certificate /etc/ssl/certificate.pem;
-      ssl_certificate_key /etc/ssl/private-key.pem;
+      ssl_certificate /etc/nginx/sites-available/certificate.pem;
+      ssl_certificate_key /etc/nginx/sites-available/private-key.pem;
 
       proxy_read_timeout 300;
       proxy_connect_timeout 300;
@@ -151,7 +151,7 @@ function nginx_configuration {
         proxy_set_header Host \$http_host;
         proxy_cache_bypass \$http_upgrade;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
         proxy_set_header X-Forwarded-Host \$host;
       }
     }"
@@ -174,7 +174,7 @@ function nginx_configuration {
         proxy_set_header Host \$http_host;
         proxy_cache_bypass \$http_upgrade;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
         proxy_set_header X-Forwarded-Host \$host;
       }
     }"
@@ -208,9 +208,9 @@ function start_k0s {
   k0s kubectl get nodes &> /dev/null || {
     say 4 "Starting k0s cluster..."
     sudo k0s install controller --single &
-    sleep 5
+    sleep 15
     sudo k0s start &
-    sleep 10
+    sleep 15
   }
 }
 
