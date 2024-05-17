@@ -138,10 +138,6 @@ function nginx_configuration {
       ssl_certificate /etc/nginx/sites-available/certificate.pem;
       ssl_certificate_key /etc/nginx/sites-available/private-key.pem;
 
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
-
       location / {
         proxy_pass http://$cluster_ip;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -160,10 +156,6 @@ function nginx_configuration {
     server {
       listen 80 default_server;
       listen [::]:80 default_server;
-
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
 
       location / {
         proxy_pass http://$cluster_ip;
@@ -210,7 +202,7 @@ function install_k0s {
 # Function to start k0s cluster
 function start_k0s {
   if ! k0s kubectl get nodes &> /dev/null; then
-    say "Starting k0s cluster..."
+    say 4 "Starting k0s cluster..."
     sudo k0s install controller --single &
     sleep 10
     sudo k0s start &
