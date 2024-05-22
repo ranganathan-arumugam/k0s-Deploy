@@ -207,6 +207,7 @@ function start_k0s {
     sleep 10
     sudo k0s start &
     sleep 10
+    }
 }
 
 # Function to install Bold Reports
