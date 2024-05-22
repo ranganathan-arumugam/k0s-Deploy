@@ -201,13 +201,12 @@ function install_k0s {
 
 # Function to start k0s cluster
 function start_k0s {
-  if ! k0s kubectl get nodes &> /dev/null; then
+    k0s kubectl get nodes &> /dev/null || {
     say 4 "Starting k0s cluster..."
     sudo k0s install controller --single &
     sleep 10
     sudo k0s start &
     sleep 10
-  fi
 }
 
 # Function to install Bold Reports
