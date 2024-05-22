@@ -191,23 +191,19 @@ function show_bold_reports_graphic {
 
 # Function to install k0s
 function install_k0s {
-  say "Installing k0s..."
-  if command -v k0s &> /dev/null; then
-    say "k0s is already installed."
-  else
-    curl -sSLf https://get.k0s.sh | sudo K0S_VERSION=v1.28.4+k0s.0 sh
-  fi
+  say 4 "Installing k0s..."
+  command_exists k0s && say 2 "k0s is already installed." || { curl -sSLf https://get.k0s.sh | sudo K0S_VERSION=v1.28.4+k0s.0 sh; }       
 }
 
 # Function to start k0s cluster
 function start_k0s {
-    k0s kubectl get nodes &> /dev/null || {
+  k0s kubectl get nodes &> /dev/null || {
     say 4 "Starting k0s cluster..."
     sudo k0s install controller --single &
     sleep 10
     sudo k0s start &
     sleep 10
-    }
+  }
 }
 
 # Function to install Bold Reports
