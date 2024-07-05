@@ -4,7 +4,7 @@
 set -e
 
 # Variable declaration
-repo_url="https://github.com/ranganathan-arumugam/k0s-Deploy/raw/main/private-cloud.zip"
+repo_url="https://github.com/ranganathan-arumugam/k0s-Deploy/raw/v6.1.34/private-cloud.zip"
 destination="/manifest"
 # storage_account_name="nfssharedstorageaccount"
 # fileshare_name="sharedfileshare"
