@@ -3,30 +3,23 @@
 
 set -e
 
-# Variable declaration.
+# Variable declaration
 repo_url="https://github.com/ranganathan-arumugam/k0s-Deploy/raw/main/private-cloud.zip"
 destination="/manifest"
+storage_account_name="managedhostingacc"
+fileshare_name="managedhostingfs"
 
 # Parse command-line arguments
 for arg in "$@"; do
   case $arg in
-    --storage-account-name=*)
-      storage_account_name="${arg#*=}"
-      ;;
-    --storage-account-key=*)
-      storage_account_key="${arg#*=}"
-      ;;
-    --fileshare-name=*)
-      fileshare_name="${arg#*=}"
-      ;;
-    --nfs-fileshare-path=*)
-      nfsfileshare_path="${arg#*=}"
-      ;;
-    --nfs-server-name=*)
-      nfs_server_name="${arg#*=}"
-      ;;
-    --container-name=*)
-      container_name="${arg#*=}"
+    # --storage-account-name=*)
+    #   storage_account_name="${arg#*=}"
+    #   ;;
+    # --fileshare-name=*)
+    #   fileshare_name="${arg#*=}"
+    #   ;;
+    --folder-name=*)
+      folder_name="${arg#*=}"
       ;;
     --app_base_url=*)
       app_base_url="${arg#*=}"
@@ -58,7 +51,7 @@ function install_packages {
     if ! command_exists "$package"; then
       say 4 "Installing $package..."
       sudo apt-get update
-      sudo apt-get install -y "$package"
+      sudo apt-get install -qq -y "$package"
       say 2 "$package installed successfully."
     else
       say 2 "$package is already installed."
@@ -76,27 +69,34 @@ function download_and_unzip_manifest {
   rm repo.zip
 }
 
-# Function to update SMB fileshare name in configuration
-function update_smbfileshare_name {
-  pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_smb.yaml"
-  if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s/^ *shareName: <fileshare>/   shareName: $fileshare_name/" "$pvconfig_file"
-  else
-    handle_error "Pvclaim file is not available"
-  fi
+# Function to create a folder in NFS file share.
+function create_filshare_folder {
+    say 4 "Creating Folder inside the NFS fileshare"
+    # Mount NFS file share
+    sudo mkdir -p "/mount/$storage_account_name/$fileshare_name"
+    sudo mount -t nfs "$storage_account_name.file.core.windows.net:/$storage_account_name/$fileshare_name" "/mount/$storage_account_name/$fileshare_name" -o vers=4,minorversion=1,sec=sys,nconnect=4
 
-  kustomfile="$destination/private-cloud/kustomization.yaml"
-  sed -i -e "s/^ *#- boldreports\/configuration\/pvclaim_azure_smb\.yaml/  - boldreports\/configuration\/pvclaim_azure_smb.yaml/" "$kustomfile"
+    # Create folder
+    cd "/mount/$storage_account_name/$fileshare_name" || exit
+    sudo mkdir "$folder_name"
+    sudo chmod 777 "$folder_name"
 
-  sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"  
+    # Display directory listing
+    ls -lt
+
+    # Change back to root directory
+    cd /
+
+    # Unmount NFS file share
+    sudo umount "/mount/$storage_account_name/$fileshare_name"
 }
 
-# Function to update NFS fileshare name in configuration
-function update_nfsfileshare_name {
+# Function to update fileshare name in configuration
+function update_fileshare_name {
   pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_nfs.yaml"
   if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s|^ *path: <path>|   path: $nfsfileshare_path|" "$pvconfig_file"
-    sed -i -e "s|^ *server: <server>|   server: $nfs_server_name|" "$pvconfig_file"
+    sed -i -e "s/^ *path: \/<storage_account_name>\/<fileshare_name>\/<folder_name>/   path: \/$storage_account_name\/$fileshare_name\/$folder_name/" "$pvconfig_file"
+    sed -i -e "s/^ *server: <storage_account_name>.file.core.windows.net/   server: $storage_account_name.file.core.windows.net/" "$pvconfig_file"
   else
     handle_error "Pvclaim file is not available"
   fi
@@ -104,22 +104,7 @@ function update_nfsfileshare_name {
   kustomfile="$destination/private-cloud/kustomization.yaml"
   sed -i -e "s/^ *#- boldreports\/configuration\/pvclaim_azure_nfs\.yaml/  - boldreports\/configuration\/pvclaim_azure_nfs.yaml/" "$kustomfile"
 
-  sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"  
-}
-
-# Function to update Azure Blob container name in configuration
-function update_blobcontainer_name {
-  pvconfig_file="$destination/private-cloud/boldreports/configuration/pvclaim_azure_blob.yaml"
-  if [ -f "$pvconfig_file" ]; then
-    sed -i -e "s/^ *containerName: <container_name>/   containerName: $container_name/" "$pvconfig_file"
-  else
-    handle_error "Pvclaim file is not available"
-  fi
-
-  kustomfile="$destination/private-cloud/kustomization.yaml"
-  sed -i -e "s/^ *#- boldreports\/configuration\/pvclaim_azure_blob\.yaml/  - boldreports\/configuration\/pvclaim_azure_blob.yaml/" "$kustomfile"
-
-  sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"  
+  sed -i -e "s/^ *- boldreports\/configuration\/pvclaim_onpremise\.yaml/  #- boldreports\/configuration\/pvclaim_onpremise.yaml/" "$kustomfile"
 }
 
 # Function to update app_base_url in deployment file
@@ -133,14 +118,13 @@ function nginx_configuration {
   cluster_ip=$(k0s kubectl get service ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')
   domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
   nginx_conf="/etc/nginx/sites-available/default"
-  request_uri="$request_uri"
   # cp /manifest/private-cloud/boldreports/certificate.pem /etc/nginx/sites-available
   # cp /manifest/private-cloud/boldreports/private-key.pem /etc/nginx/sites-available
-  
+
   # Remove existing nginx configuration file
   [ -e "$nginx_conf" ] && rm "$nginx_conf"
-  
-if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+
+  if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     nginx_conf_content="
     server {
       listen 80;
@@ -151,12 +135,8 @@ if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
     server {
       server_name $domain;
       listen 443 ssl;
-      ssl_certificate /etc/ssl/domain.pem;
-      ssl_certificate_key /etc/ssl/domain.key;
-
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
+      ssl_certificate /etc/nginx/sites-available/certificate.pem;
+      ssl_certificate_key /etc/nginx/sites-available/private-key.pem;
 
       location / {
         proxy_pass http://$cluster_ip;
@@ -176,10 +156,6 @@ if [ -n "$app_base_url" ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
     server {
       listen 80 default_server;
       listen [::]:80 default_server;
-
-      proxy_read_timeout 300;
-      proxy_connect_timeout 300;
-      proxy_send_timeout 300;
 
       location / {
         proxy_pass http://$cluster_ip;
@@ -216,7 +192,7 @@ function show_bold_reports_graphic {
 # Function to install k0s
 function install_k0s {
   say 4 "Installing k0s..."
-  command_exists k0s && say 2 "k0s is already installed." || { curl -sSLf https://get.k0s.sh | sudo sh; }
+  command_exists k0s && say 2 "k0s is already installed." || { curl -sSLf https://get.k0s.sh | sudo K0S_VERSION=v1.28.4+k0s.0 sh; }       
 }
 
 # Function to start k0s cluster
@@ -224,29 +200,11 @@ function start_k0s {
   k0s kubectl get nodes &> /dev/null || {
     say 4 "Starting k0s cluster..."
     sudo k0s install controller --single &
-    sleep 5
+    sleep 10
     sudo k0s start &
     sleep 10
   }
 }
-
-# function domain_mapping {
-#   # File path to your YAML configuration file
-#   config_file="/manifest/private-cloud/boldreports/ingress.yaml"
-
-#   # Domain to replace with
-#   new_domain=$(echo "$app_base_url" | sed 's~^https\?://~~')
-
-#   # Uncomment and replace domain in the specified lines
-#   sed -i -e 's/^ *# tls:/  tls:/' \
-#          -e 's/^ *# - hosts:/  - hosts:/' \
-#          -e "s/^ *# - example.com/    - $new_domain/" \
-#          -e 's/^ *# secretName: boldreports-tls/    secretName: boldreports-tls/' \
-#          -e "s/^ *- #host: example.com/  - host: $new_domain/" \
-#          "$config_file"
-
-#   say 4 "Domain mapped in the ingress file."
-# }
 
 # Function to install Bold Reports
 function install_bold_reports {
@@ -254,7 +212,6 @@ function install_bold_reports {
   download_and_unzip_manifest
   install_k0s
   start_k0s
-  echo $app_base_url
   say 4 "Checking app_base_url provided"
   if [ -n "$app_base_url" ]; then
     app_base_url_mapping
@@ -263,46 +220,19 @@ function install_bold_reports {
   fi
 
   k0s kubectl get nodes &> /dev/null || handle_error "k0s cluster is not running."
-  
-  if [ -n "$storage_account_name" ] && [ -n "$storage_account_key" ] && [ -n "$fileshare_name" ]; then
-    update_smbfileshare_name
-    # Check if the secret already exists
-    if k0s kubectl get secret bold-azure-secret > /dev/null 2>&1; then
-      say 4 "Secret bold-azure-secret already exists. Skipping creation."
-    else
-      say 4 "Creating azure secret"
-      k0s kubectl create secret generic bold-azure-secret --from-literal azurestorageaccountname="$storage_account_name" --from-literal azurestorageaccountkey="$storage_account_key" --type=Opaque
-    fi
-  else
-    say 3 "Skipping SMB fileshare mounting details as they are not provided."
-  fi
 
-  if [ -n "$nfsfileshare_path" ] && [ -n "$nfs_server_name" ]; then
-    update_nfsfileshare_name
+  if [ -n "$storage_account_name" ] && [ -n "$folder_name" ] && [ -n "$fileshare_name" ]; then
+    create_filshare_folder
+    update_fileshare_name
   else
-    say 3 "Skipping NFS fileshare mounting details as they are not provided."
-  fi
-
-  if [ -n "$storage_account_name" ] && [ -n "$storage_account_key" ] && [ -n "$container_name" ]; then
-    update_blobcontainer_name
-    # Check if the secret already exists
-    if k0s kubectl get secret bold-azure-secret > /dev/null 2>&1; then
-      say 4 "Secret bold-azure-secret already exists. Skipping creation."
-    else
-      say 4 "Creating azure secret"
-      k0s kubectl create secret generic bold-azure-secret --from-literal azurestorageaccountname="$storage_account_name" --from-literal azurestorageaccountkey="$storage_account_key" --type=Opaque
-    fi
-  else
-    say 3 "Skipping blobcontainer name mounting details as they are not provided."
+    say 3 "Skipping fileshare mounting details as they are not provided."
   fi
 
   say 4 "Deploying Bold Reports application..."
   k0s kubectl apply -k "$destination/private-cloud"
-  # if [ -n "$app_base_url" ]; then
-  #   k0s kubectl create secret tls boldreports-tls -n bold-services --key "/manifest/private-cloud/boldreports/private-key.pem" --cert "/manifest/private-cloud/boldreports/certificate.pem"
-  # fi
 
   show_bold_reports_graphic
+
   nginx_configuration
 
   say 2 "Bold Reports application deployed successfully!"

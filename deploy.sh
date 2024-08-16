@@ -6,18 +6,18 @@ set -e
 # Variable declaration
 repo_url="https://github.com/ranganathan-arumugam/k0s-Deploy/raw/main/private-cloud.zip"
 destination="/manifest"
-# storage_account_name="nfssharedstorageaccount"
-# fileshare_name="sharedfileshare"
+storage_account_name="managedhostingacc"
+fileshare_name="managedhostingfs"
 
 # Parse command-line arguments
 for arg in "$@"; do
   case $arg in
-    --storage-account-name=*)
-      storage_account_name="${arg#*=}"
-      ;;
-    --fileshare-name=*)
-      fileshare_name="${arg#*=}"
-      ;;
+    # --storage-account-name=*)
+    #   storage_account_name="${arg#*=}"
+    #   ;;
+    # --fileshare-name=*)
+    #   fileshare_name="${arg#*=}"
+    #   ;;
     --folder-name=*)
       folder_name="${arg#*=}"
       ;;
