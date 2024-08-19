@@ -6,8 +6,8 @@ set -e
 # Variable declaration
 repo_url="https://github.com/ranganathan-arumugam/k0s-Deploy/raw/main/private-cloud.zip"
 destination="/manifest"
-storage_account_name="managedhostingacc"
-fileshare_name="managedhostingfs"
+storage_account_name="k0ssacc"
+fileshare_name="k0sfs"
 
 # Parse command-line arguments
 for arg in "$@"; do
